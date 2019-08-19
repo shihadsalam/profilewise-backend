@@ -2,6 +2,7 @@ package com.boot.angular.service;
 
 import java.util.List;
 
+import com.boot.angular.model.FormUser;
 import com.boot.angular.model.User;
 
 public interface UserService {
@@ -10,12 +11,14 @@ public interface UserService {
 	
 	public List<String> findAllUserNames();
 	
-	public User addUser(User User);
+	public User addUser(User user);
 
 	public User findUserByUserName(String username);
 
-	public void deleteUser(User User);
+	public void deleteUser(User user);
 	
-	public User update(User User);
+	public User update(FormUser user);
+	
+	public User updateUser(User user);
 	
 }

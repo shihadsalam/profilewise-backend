@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.boot.angular.model.FormUser;
 import com.boot.angular.model.User;
 import com.boot.angular.repository.UserRepository;
 
@@ -66,7 +67,7 @@ public class UserServiceImpl implements UserDetailsService,UserService {
 
 	@Override
 	@Transactional
-	public User update(User user) {
+	public User update(FormUser user) {
 		User existingUser = findUserByUserName(user.getUsername());
 		if (null != existingUser) {
 			existingUser.update(user);
@@ -74,6 +75,12 @@ public class UserServiceImpl implements UserDetailsService,UserService {
 			return existingUser;
 		}
 		return null;
+	}
+	
+	@Override
+	@Transactional
+	public User updateUser(User user) {
+		return userRepository.save(user);
 	}
 
 	@Override
