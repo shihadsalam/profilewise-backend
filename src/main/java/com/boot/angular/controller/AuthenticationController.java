@@ -44,7 +44,7 @@ public class AuthenticationController {
 			return ResponseEntity.ok(new AuthData(token, null));
 		}
 		catch (Throwable ex) {
-			return ResponseEntity.ok(new AuthData(null, "Invalid Credentials!"));
+			return ResponseEntity.ok(new AuthData(null, "Invalid Credentials"));
 		}
 	}
 

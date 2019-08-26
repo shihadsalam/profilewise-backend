@@ -1,5 +1,6 @@
 package com.boot.angular.service;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,11 +68,11 @@ public class UserServiceImpl implements UserDetailsService,UserService {
 
 	@Override
 	@Transactional
-	public User update(FormUser user) {
+	public User update(FormUser user) throws ParseException {
 		User existingUser = findUserByUserName(user.getUsername());
 		if (null != existingUser) {
 			existingUser.update(user);
-			userRepository.save(existingUser);
+			existingUser = userRepository.save(existingUser);
 			return existingUser;
 		}
 		return null;

@@ -1,7 +1,10 @@
 package com.boot.angular.model;
 
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -142,12 +145,17 @@ public class User implements Serializable {
 		this.userCareer = userCareer;
 	}
 
-	public void update(FormUser user) {
+	public void update(FormUser user) throws ParseException {
 		if (!StringUtils.isEmpty(user.getFirstName())) {
 			this.firstName = user.getFirstName();
 		}
 		if (!StringUtils.isEmpty(user.getLastName())) {
 			this.lastName = user.getLastName();
+		}
+		if (!StringUtils.isEmpty(user.getDob())) {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+			sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+			this.dob = sdf.parse(user.getDob());
 		}
 		if (!StringUtils.isEmpty(user.getEmail())) {
 			this.email = user.getEmail();
@@ -156,6 +164,17 @@ public class User implements Serializable {
 			this.country = user.getCountry();
 		}
 		this.isAdmin = user.getIsAdmin();
+		
+		if (null != user.getUserCareer()) {
+			if (null != this.userCareer) {
+				this.userCareer.update(user.getUserCareer());
+			}
+			else {
+				UserCareer userCareer = user.getUserCareer();
+				userCareer.setUser(this);
+				setUserCareer(userCareer);
+			}
+		}
 	}
 
 }

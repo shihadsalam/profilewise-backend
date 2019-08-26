@@ -1,5 +1,6 @@
 package com.boot.angular.service;
 
+import java.text.ParseException;
 import java.util.List;
 
 import com.boot.angular.model.FormUser;
@@ -17,7 +18,7 @@ public interface UserService {
 
 	public void deleteUser(User user);
 	
-	public User update(FormUser user);
+	public User update(FormUser user) throws ParseException;
 	
 	public User updateUser(User user);
 	

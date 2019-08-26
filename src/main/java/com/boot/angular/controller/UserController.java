@@ -1,12 +1,11 @@
 package com.boot.angular.controller;
 
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.TimeZone;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -44,22 +43,15 @@ public class UserController {
 	}
 
 	private User createUserEntity(FormUser formUser) throws ParseException {
-		// Placeholder date value
-		String dobStr = "01/01/1990";
-		if (formUser.getDob() instanceof Map) {
-			@SuppressWarnings("unchecked")
-			Map<String, Integer> dobMap = (Map<String, Integer>) formUser.getDob();
-			dobStr= String.valueOf(dobMap.get("day")) + "/" + String.valueOf(dobMap.get("month")) + "/" + String.valueOf(dobMap.get("year"));
-		}
-		
-		DateFormat format = new SimpleDateFormat("dd/MM/yyyy");
-		Date dob = format.parse(dobStr);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+		sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+		Date dob = sdf.parse(formUser.getDob());
 		return new User(formUser.getFirstName(), formUser.getLastName(), dob, formUser.getUsername(), 
 				formUser.getPassword(), formUser.getEmail(), formUser.getCountry(), formUser.getIsAdmin());
 	}
 
 	@PutMapping(path = { "/edit-user" })
-	public User update(@RequestBody FormUser user) {
+	public User update(@RequestBody FormUser user) throws ParseException {
 		return userService.update(user);
 	}
 

@@ -6,7 +6,7 @@ public class FormUser {
 	private UserCareer userCareer;
 	private String firstName;
 	private String lastName;
-	private Object dob;
+	private String dob;
 	private String username;
 	private String password;
 	private String email;
@@ -17,7 +17,7 @@ public class FormUser {
 		
 	}
 
-	public FormUser(String firstName, String lastName, Object dob, String username, String password, String email, String country, boolean isAdmin) {
+	public FormUser(String firstName, String lastName, String dob, String username, String password, String email, String country, boolean isAdmin) {
 		super();
 		this.firstName = firstName;
 		this.lastName = lastName;
@@ -54,11 +54,11 @@ public class FormUser {
 		this.lastName = lastName;
 	}
 	
-	public Object getDob() {
+	public String getDob() {
 		return dob;
 	}
 
-	public void setDob(Object dob) {
+	public void setDob(String dob) {
 		this.dob = dob;
 	}
 
