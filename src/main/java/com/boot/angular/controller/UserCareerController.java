@@ -85,10 +85,10 @@ public class UserCareerController {
 		
 		userProfile = userProfileService.addUserProfile(userProfile);
 		if (null != userProfile) {
-			return ResponseEntity.ok(new Message("Import Success", "", ""));
+			return ResponseEntity.ok(new Message("Import Success for User "+username, "", ""));
 		}
 		
-		return ResponseEntity.ok(new Message("", "Import Failed!", ""));
+		return ResponseEntity.ok(new Message("", "Import Failed for User "+username, ""));
 	}
 	
 	@SuppressWarnings("unchecked")
