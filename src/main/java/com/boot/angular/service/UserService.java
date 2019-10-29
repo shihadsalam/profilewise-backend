@@ -21,5 +21,5 @@ public interface UserService {
 	public User update(FormUser user) throws ParseException;
 	
 	public User updateUser(User user);
-	
+
 }

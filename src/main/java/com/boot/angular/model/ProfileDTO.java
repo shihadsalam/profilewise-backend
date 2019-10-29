@@ -1,18 +1,16 @@
 package com.boot.angular.model;
 
-public class UserCareerDTO {
+public class ProfileDTO {
 
 	private String username;
 	private String json;
-	private UserCareer userCareer;
 
-	public UserCareerDTO() {
+	public ProfileDTO() {
 
 	}
 
-	public UserCareerDTO(String username, String json, UserCareer userCareer) {
+	public ProfileDTO(String username, String json) {
 		this.username = username;
-		this.userCareer = userCareer;
 		this.json = json;
 	}
 
@@ -22,14 +20,6 @@ public class UserCareerDTO {
 
 	public void setUsername(String username) {
 		this.username = username;
-	}
-
-	public UserCareer getUserCareer() {
-		return userCareer;
-	}
-
-	public void setUserCareer(UserCareer userCareer) {
-		this.userCareer = userCareer;
 	}
 
 	public String getJson() {

@@ -1,27 +1,26 @@
 package com.boot.angular.service;
 
+import java.util.List;
 import java.util.Optional;
 
-import com.boot.angular.model.ProfileGlimpseFields;
-import com.boot.angular.model.ProfileGlimpseRecord;
-import com.boot.angular.model.UserProfile;
+import com.boot.angular.model.ProfileFields;
+import com.boot.angular.model.ProfileRecords;
 
 public interface UserProfileService {
 	
-	public Optional<UserProfile> findUserProfileById(String id);
 	
-	public Optional<ProfileGlimpseFields> findProfileGlimpseFieldsById(String id);
+	public Optional<ProfileFields> findProfileFieldsByIdAndType(String id, String type);
 	
-	public Optional<ProfileGlimpseRecord> findProfileGlimpseRecordsById(String id);
+	public Optional<List<ProfileFields>> findProfileFieldsById(String id);
 	
-	public UserProfile addUserProfile(UserProfile userProfile);
+	public Optional<List<ProfileRecords>> findProfileRecordsById(String id);
 	
-	public void addProfileGlimpseFields(ProfileGlimpseFields profileGlimpseFields);
+	public Optional<ProfileRecords> findProfileRecordsByIdAndTitle(String id, String title);
 	
-	public ProfileGlimpseRecord addProfileGlimpseRecord(ProfileGlimpseRecord profileGlimpseRecord);
+	public void addProfileFields(ProfileFields profileFields);
+	
+	public void addProfileRecord(ProfileRecords profileRecords);
+	
+	public void addAllProfileRecord(List<ProfileRecords> profileRecords);
 
-	public void deleteUserProfile(UserProfile userProfile);
-	
-	public UserProfile updateUserProfile(UserProfile userProfile);
-	
 }

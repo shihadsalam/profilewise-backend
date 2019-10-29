@@ -3,31 +3,34 @@ package com.boot.angular.model;
 public class FormUser {
 
 	private Long id;
-	private UserCareer userCareer;
+	private UserContact userContact;
 	private String firstName;
 	private String lastName;
+	private String gender;
 	private String dob;
 	private String username;
 	private String password;
 	private String email;
-	private String country;
-	private boolean isAdmin = false;
+	private String userRole;
+	private boolean isSupervisor = false;
 	
 	public FormUser() {
 		
 	}
 
-	public FormUser(String firstName, String lastName, String dob, String username, String password, String email, String country, boolean isAdmin) {
+	public FormUser(String firstName, String lastName, String gender, String dob, String username, String password, String email, 
+			String userRole, boolean isSupervisor, UserContact userContact) {
 		super();
 		this.firstName = firstName;
 		this.lastName = lastName;
+		this.gender = gender;
 		this.dob = dob;
 		this.username = username;
 		this.password = password;
 		this.email = email;
-		this.country = country;
-		this.isAdmin = isAdmin;
-		this.userCareer = new UserCareer();
+		this.isSupervisor = isSupervisor;
+		this.userRole = userRole;
+		this.userContact = userContact;
 	}
 
 	public Long getId() {
@@ -54,6 +57,14 @@ public class FormUser {
 		this.lastName = lastName;
 	}
 	
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
 	public String getDob() {
 		return dob;
 	}
@@ -86,28 +97,28 @@ public class FormUser {
 		this.email = email;
 	}
 
-	public String getCountry() {
-		return country;
+	public boolean getIsSupervisor() {
+		return isSupervisor;
 	}
 
-	public void setCountry(String country) {
-		this.country = country;
-	}
-	
-	public boolean getIsAdmin() {
-		return isAdmin;
+	public void setIsSupervisor(boolean isSupervisor) {
+		this.isSupervisor = isSupervisor;
 	}
 
-	public void setIsAdmin(boolean isAdmin) {
-		this.isAdmin = isAdmin;
+	public UserContact getUserContact() {
+		return userContact;
 	}
 
-	public UserCareer getUserCareer() {
-		return userCareer;
+	public void setUserContact(UserContact userContact) {
+		this.userContact = userContact;
 	}
 
-	public void setUserCareer(UserCareer userCareer) {
-		this.userCareer = userCareer;
+	public String getUserRole() {
+		return userRole;
+	}
+
+	public void setUserRole(String userRole) {
+		this.userRole = userRole;
 	}
 	
 }

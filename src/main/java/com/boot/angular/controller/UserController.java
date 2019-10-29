@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.boot.angular.model.FormUser;
+import com.boot.angular.model.Message;
 import com.boot.angular.model.User;
 import com.boot.angular.service.UserService;
 
@@ -39,15 +40,56 @@ public class UserController {
 	@PostMapping(path = { "/signup" })
 	public User create(@RequestBody FormUser formUser) throws ParseException {
 		User user = createUserEntity(formUser);
+		user.getUserContact().setUser(user);
 		return userService.addUser(user);
+	}
+	
+	@PostMapping(path = { "/assign-reportee" })
+	public ResponseEntity<Message> assignReportee(@RequestBody FormUser formUser) {
+		String username = formUser.getUsername();
+		User currentUser = getCurrentUser();
+		if (username.equals(currentUser.getUsername())) {
+			return ResponseEntity.ok(new Message("", "Cannot assign Self as Reportee", ""));
+		}
+		else {
+			if (currentUser.getIsSupervisor()) {
+				User userToAssign = userService.findUserByUserName(username);
+				currentUser.getReportees().add(userToAssign);
+				userService.updateUser(currentUser);
+				userToAssign.setSupervisor(currentUser);
+				userService.updateUser(userToAssign);
+			}
+			else {
+				return ResponseEntity.ok(new Message("", "User " + currentUser.getUsername() + " is not a Supervisor", ""));
+			}
+			
+		}
+		return ResponseEntity.ok(new Message("Reportee assigned for " + currentUser.getUsername(), "", ""));
+	}
+	
+	@PostMapping(path = { "/remove-reportee" })
+	public ResponseEntity<Message> removeReportee(@RequestBody FormUser formUser) throws ParseException {
+		String username = formUser.getUsername();
+		User currentUser = getCurrentUser();
+		if (currentUser.getIsSupervisor()) {
+			User assignedUser = userService.findUserByUserName(username);
+			currentUser.getReportees().removeIf(rep -> rep.getUsername().equals(username));
+			userService.updateUser(currentUser);
+			assignedUser.setSupervisor(null);
+			userService.updateUser(assignedUser);
+		}
+		else {
+			return ResponseEntity.ok(new Message("", "User " + currentUser.getUsername() + " is not a Supervisor", ""));
+		}
+		return ResponseEntity.ok(new Message("Reportee removed from " + currentUser.getUsername(), "", ""));
 	}
 
 	private User createUserEntity(FormUser formUser) throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 		sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 		Date dob = sdf.parse(formUser.getDob());
-		return new User(formUser.getFirstName(), formUser.getLastName(), dob, formUser.getUsername(), 
-				formUser.getPassword(), formUser.getEmail(), formUser.getCountry(), formUser.getIsAdmin());
+		return new User(formUser.getFirstName(), formUser.getLastName(), formUser.getGender(), dob, formUser.getUsername(), 
+				formUser.getPassword(), formUser.getUserRole(), formUser.getIsSupervisor(), formUser.getUserContact());
 	}
 
 	@PutMapping(path = { "/edit-user" })
@@ -67,19 +109,28 @@ public class UserController {
 
 	@DeleteMapping(path = { "/{username}" })
 	public User delete(@PathVariable("username") String username) {
-		User user = findUser(username);
-		userService.deleteUser(user);
-		return user;
+		if (username.equals(getCurrentUser().getUsername())) {
+			throw new RuntimeException("Self delete not allowed !");
+		}
+		else {
+			User user = findUser(username);
+			userService.deleteUser(user);
+			return user;
+		}
 	}
 
 	@GetMapping
 	public List<User> findAllUsers() {
-		String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
-		User user = userService.findUserByUserName(currentUser);
-		if (user.getIsAdmin()) {
+		User user = getCurrentUser();
+		if (user.getIsSupervisor()) {
 			return userService.findAllUsers();
 		}
 		return Collections.singletonList(user);
+	}
+	
+	private User getCurrentUser() {
+		String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+		return userService.findUserByUserName(currentUser);
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)

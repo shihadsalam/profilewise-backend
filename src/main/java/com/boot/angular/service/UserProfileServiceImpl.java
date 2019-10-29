@@ -1,77 +1,68 @@
 package com.boot.angular.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.boot.angular.model.ProfileGlimpseFields;
-import com.boot.angular.model.ProfileGlimpseRecord;
-import com.boot.angular.model.UserProfile;
-import com.boot.angular.repository.ProfileGlimpseFieldsRepository;
-import com.boot.angular.repository.ProfileGlimpseRecordRepository;
-import com.boot.angular.repository.UserProfileRepository;
+import com.boot.angular.model.ProfileFields;
+import com.boot.angular.model.ProfileRecords;
+import com.boot.angular.repository.ProfileFieldsRepository;
+import com.boot.angular.repository.ProfileRecordsRepository;
 
 @Service(value = "userProfileService")
 public class UserProfileServiceImpl implements UserProfileService {
+
 	
 	@Autowired
-	private UserProfileRepository userProfileRepository;
+	private ProfileFieldsRepository profileFieldsRepository;
 	
 	@Autowired
-	private ProfileGlimpseFieldsRepository profileGlimpseFieldsRepository;
-	
-	@Autowired
-	private ProfileGlimpseRecordRepository profileGlimpseRecordRepository;
-	
+	private ProfileRecordsRepository profileRecordsRepository;
 
+	
 	@Override
 	@Transactional
-	public Optional<UserProfile> findUserProfileById(String id) {
-		return userProfileRepository.findById(id);
+	public Optional<ProfileFields> findProfileFieldsByIdAndType(String id, String type) {
+		return profileFieldsRepository.findByIdAndType(id, type);
 	}
 	
 	@Override
 	@Transactional
-	public Optional<ProfileGlimpseFields> findProfileGlimpseFieldsById(String id) {
-		return profileGlimpseFieldsRepository.findById(id);
+	public Optional<List<ProfileFields>> findProfileFieldsById(String id) {
+		return profileFieldsRepository.findAllById(id);
 	}
 
 	@Override
 	@Transactional
-	public UserProfile addUserProfile(UserProfile userProfile) {
-		return userProfileRepository.save(userProfile);
+	public Optional<List<ProfileRecords>> findProfileRecordsById(String id) {
+		return profileRecordsRepository.findAllById(id);
 	}
 
 	@Override
 	@Transactional
-	public void deleteUserProfile(UserProfile userProfile) {
-		userProfileRepository.delete(userProfile);
+	public Optional<ProfileRecords> findProfileRecordsByIdAndTitle(String id, String title) {
+		return profileRecordsRepository.findByIdAndTitle(id, title);
 	}
 
 	@Override
 	@Transactional
-	public UserProfile updateUserProfile(UserProfile userProfile) {
-		return userProfileRepository.save(userProfile);
+	public void addProfileFields(ProfileFields profileFields) {
+		profileFieldsRepository.save(profileFields);
 	}
 
 	@Override
 	@Transactional
-	public void addProfileGlimpseFields(ProfileGlimpseFields profileGlimpseFields) {
-		profileGlimpseFieldsRepository.save(profileGlimpseFields);
+	public void addProfileRecord(ProfileRecords profileRecords) {
+		profileRecordsRepository.save(profileRecords);
 	}
 
 	@Override
 	@Transactional
-	public ProfileGlimpseRecord addProfileGlimpseRecord(ProfileGlimpseRecord profileGlimpseRecord) {
-		return profileGlimpseRecordRepository.save(profileGlimpseRecord);
+	public void addAllProfileRecord(List<ProfileRecords> profileRecords) {
+		profileRecordsRepository.saveAll(profileRecords);
 	}
-
-	@Override
-	@Transactional
-	public Optional<ProfileGlimpseRecord> findProfileGlimpseRecordsById(String id) {
-		return profileGlimpseRecordRepository.findById(id);
-	}
-
+	
 }

@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import javax.persistence.CascadeType;
@@ -13,11 +14,16 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import org.springframework.util.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "USER", uniqueConstraints = { @UniqueConstraint(columnNames = { "USER_NAME" }) })
@@ -26,18 +32,32 @@ public class User implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Column(name = "ID")
 	private Long id;
 	
+	@ManyToOne
+	@JoinColumn(name = "supervisor_id")
+	private User supervisor;
+	
+	@JsonIgnore
+	@OneToMany
+	private List<User> reportees;
+	
 	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = {CascadeType.ALL})
-	private UserCareer userCareer;
+	private UserContact userContact;
+	
+	@Column(name = "ROLE")
+	private RoleEnum userRole;
 
 	@Column(name = "FIRST_NAME")
 	private String firstName;
 
 	@Column(name = "LAST_NAME")
 	private String lastName;
+	
+	@Column(name = "GENDER")
+	private String gender;
 	
 	@Column(name = "DOB")
 	private Date dob;
@@ -48,31 +68,27 @@ public class User implements Serializable {
 	@Column(name = "PASSWORD")
 	private String password;
 
-	@Column(name = "EMAIL")
-	private String email;
-
-	@Column(name = "COUNTRY")
-	private String country;
-	
-	@Column(name = "IS_ADMIN")
-	private boolean isAdmin = false;
+	@Column(name = "IS_SUPERVISOR")
+	private boolean isSupervisor = false;
 	
 	public User() {
 		// hibernate
 	}
 
-	public User(String firstName, String lastName, Date dob, String username, String password, String email, String country, boolean isAdmin) {
+	public User(String firstName, String lastName, String gender, Date dob, String username, String password,
+			String role, boolean isSupervisor, UserContact userContact) {
 		super();
 		this.firstName = firstName;
 		this.lastName = lastName;
+		this.gender = gender;
 		this.dob = dob;
 		this.username = username;
 		this.password = password;
-		this.email = email;
-		this.country = country;
-		this.isAdmin = isAdmin;
+		this.userRole = RoleEnum.getRole(role);
+		this.isSupervisor = isSupervisor;
+		this.userContact = userContact;
 	}
-
+	
 	public String getFirstName() {
 		return firstName;
 	}
@@ -89,6 +105,22 @@ public class User implements Serializable {
 		this.lastName = lastName;
 	}
 	
+	public User getSupervisor() {
+		return supervisor;
+	}
+
+	public void setSupervisor(User supervisor) {
+		this.supervisor = supervisor;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
 	public Date getDob() {
 		return dob;
 	}
@@ -113,36 +145,36 @@ public class User implements Serializable {
 		this.password = password;
 	}
 
-	public String getEmail() {
-		return email;
+	public boolean getIsSupervisor() {
+		return isSupervisor;
 	}
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getCountry() {
-		return country;
-	}
-
-	public void setCountry(String country) {
-		this.country = country;
+	public void setIsSupervisor(boolean isSupervisor) {
+		this.isSupervisor = isSupervisor;
 	}
 	
-	public boolean getIsAdmin() {
-		return isAdmin;
+	public UserContact getUserContact() {
+		return userContact;
 	}
 
-	public void setIsAdmin(boolean isAdmin) {
-		this.isAdmin = isAdmin;
+	public void setUserContact(UserContact userContact) {
+		this.userContact = userContact;
 	}
 	
-	public UserCareer getUserCareer() {
-		return userCareer;
+	public RoleEnum getUserRole() {
+		return userRole;
 	}
 
-	public void setUserCareer(UserCareer userCareer) {
-		this.userCareer = userCareer;
+	public void setUserRole(RoleEnum userRole) {
+		this.userRole = userRole;
+	}
+	
+	public List<User> getReportees() {
+		return reportees;
+	}
+
+	public void setReportees(List<User> reportees) {
+		this.reportees = reportees;
 	}
 
 	public void update(FormUser user) throws ParseException {
@@ -152,27 +184,29 @@ public class User implements Serializable {
 		if (!StringUtils.isEmpty(user.getLastName())) {
 			this.lastName = user.getLastName();
 		}
+		if (!StringUtils.isEmpty(user.getGender())) {
+			this.gender = user.getGender();
+		}
 		if (!StringUtils.isEmpty(user.getDob())) {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 			sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 			this.dob = sdf.parse(user.getDob());
 		}
-		if (!StringUtils.isEmpty(user.getEmail())) {
-			this.email = user.getEmail();
-		}
-		if (!StringUtils.isEmpty(user.getCountry())) {
-			this.country = user.getCountry();
-		}
-		this.isAdmin = user.getIsAdmin();
 		
-		if (null != user.getUserCareer()) {
-			if (null != this.userCareer) {
-				this.userCareer.update(user.getUserCareer());
+		this.isSupervisor = user.getIsSupervisor();
+		
+		if (!StringUtils.isEmpty(user.getUserRole())) {
+			this.userRole = RoleEnum.getRole(user.getUserRole());
+		}
+		
+		if (null != user.getUserContact()) {
+			if (null != this.userContact) {
+				this.userContact.update(user.getUserContact());
 			}
 			else {
-				UserCareer userCareer = user.getUserCareer();
-				userCareer.setUser(this);
-				setUserCareer(userCareer);
+				UserContact userContact = user.getUserContact();
+				userContact.setUser(this);
+				setUserContact(userContact);
 			}
 		}
 	}

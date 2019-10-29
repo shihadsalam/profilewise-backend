@@ -83,7 +83,7 @@ public class UserServiceImpl implements UserDetailsService,UserService {
 	public User updateUser(User user) {
 		return userRepository.save(user);
 	}
-
+	
 	@Override
 	@Transactional
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

@@ -2,16 +2,19 @@ package com.boot.angular.model;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.Id;
 
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.util.StringUtils;
 
-@Document(collection = "profile_glimpse_fields")
-public class ProfileGlimpseFields {
+@Document(collection = "profile_fields")
+public class ProfileFields {
     
 	@Id
     private String id;
+	private String type;
     private String field1;
     private String field2;
     private String field3;
@@ -20,15 +23,18 @@ public class ProfileGlimpseFields {
     private String field6;
     private String field7;
     private String field8;
+    private String field9;
+    private String field10;
     
-    public ProfileGlimpseFields() {
+    public ProfileFields() {
     	
     }
 
-	public ProfileGlimpseFields(String id, String field1, String field2, String field3, String field4, String field5,
-			String field6, String field7, String field8) {
+	public ProfileFields(String id, String type, String field1, String field2, String field3, String field4, String field5,
+			String field6, String field7, String field8, String field9, String field10) {
 		super();
 		this.id = id;
+		this.type = type;
 		this.field1 = field1;
 		this.field2 = field2;
 		this.field3 = field3;
@@ -37,6 +43,8 @@ public class ProfileGlimpseFields {
 		this.field6 = field6;
 		this.field7 = field8;
 		this.field8 = field8;
+		this.field9 = field9;
+		this.field10 = field10;
 	}
 
 	public String getId() {
@@ -45,6 +53,14 @@ public class ProfileGlimpseFields {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
 	public String getField1() {
@@ -111,8 +127,28 @@ public class ProfileGlimpseFields {
 		this.field8 = field8;
 	}
 	
+	public String getField9() {
+		return field9;
+	}
+
+	public void setField9(String field9) {
+		this.field9 = field9;
+	}
+
+	public String getField10() {
+		return field10;
+	}
+
+	public void setField10(String field10) {
+		this.field10 = field10;
+	}
+
 	public List<String> getFieldsList() {
-		return Arrays.asList(field1, field2, field3, field4, field5, field6, field7, field8);
+		return Arrays.asList(field1, field2, field3, field4, field5, field6, field7, field8, field9, field10);
+	}
+	
+	public List<String> getNonEmptyFieldsList() {
+		return getFieldsList().stream().filter(field -> !StringUtils.isEmpty(field)).collect(Collectors.toList());
 	}
     
 }
