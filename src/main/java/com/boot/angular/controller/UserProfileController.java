@@ -1,5 +1,6 @@
 package com.boot.angular.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,8 +9,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -24,11 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.boot.angular.model.Message;
+import com.boot.angular.model.ProfileFieldId;
 import com.boot.angular.model.ProfileFields;
+import com.boot.angular.model.ProfileFieldsDTO;
+import com.boot.angular.model.ProfileRecordId;
 import com.boot.angular.model.ProfileRecords;
 import com.boot.angular.service.UserProfileService;
-import com.google.gson.Gson;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 @CrossOrigin(origins = "http://localhost:4200", maxAge = 3600)
@@ -40,12 +45,13 @@ public class UserProfileController {
 	private UserProfileService userProfileService;
 	
 	private static final String TITLE = "Title";
+	private static final String FIELD_SET = "Field Set";
 
 	
 	@GetMapping(path = { "/get-profile-fields/{username}/{type}" })
 	public ResponseEntity<List<String>> getProfileFields(@PathVariable("username") String username, 
 			@PathVariable("type") String type) {
-		Optional<ProfileFields> fields = userProfileService.findProfileFieldsByIdAndType(username, type);
+		Optional<ProfileFields> fields = getOptionalProfileField(username, type);
 		if (fields.isPresent()) {
 			ProfileFields profileFields = fields.get();
 			return ResponseEntity.ok(profileFields.getNonEmptyFieldsList());
@@ -53,17 +59,32 @@ public class UserProfileController {
 		return null;
 	}
 	
+	@GetMapping(path = { "/get-profile-fields-map/{username}" })
+	public ResponseEntity<Map<String, List<String>>> getProfileFieldsAsMap(@PathVariable("username") String username) {
+		Map<String, List<String>> mapData = new HashMap<String, List<String>>();
+		Optional<List<ProfileFields>> fieldList = userProfileService.findProfileFieldsByUsername(username);
+		if (fieldList.isPresent()) {
+			List<ProfileFields> profileFieldList = fieldList.get();
+			for (ProfileFields profileFields : profileFieldList) {
+				mapData.put(profileFields.getId().getType(), profileFields.getNonEmptyFieldsList());
+			}
+			return ResponseEntity.ok(mapData);
+		}
+		return null;
+	}
+	
 	@PostMapping(path = { "/add-profile-fields" })
-	public ResponseEntity<Message> addProfileFields(@RequestBody ProfileFields profileFields) {
+	public ResponseEntity<Message> addProfileFields(@RequestBody ProfileFieldsDTO profileFieldsDTO) {
+		ProfileFields profileFields = createProfileFields(profileFieldsDTO);
 		if (profileFields.getFieldsList().stream().anyMatch(field -> !isEmpty(field))) {
 			if (!isProfileFieldsExists(profileFields)) {
 				userProfileService.addProfileFields(profileFields);
 				return ResponseEntity.ok(new Message("Profile fields created successfully for " 
-						+ profileFields.getId(), "", ""));
+						+ profileFields.getId().getUsername(), "", ""));
 
 			}
 			else {
-				return ResponseEntity.ok(new Message("", "Profile fields with type "+profileFields.getType()+""
+				return ResponseEntity.ok(new Message("", "Profile fields with type "+profileFields.getId().getType()+""
 						+ " already exists", ""));
 			}
 		}
@@ -74,77 +95,150 @@ public class UserProfileController {
 	
 	@GetMapping(path = { "/get-profile-records/{username}" })
 	public Map<String, Map<String, Object>> getProfileRecords(@PathVariable("username") String username) {
-		Map<String, Map<String, Object>> resultMap = new HashMap<String, Map<String,Object>>();
 		Map<String, Object> innerMap = new HashMap<String, Object>();
-		Optional<List<ProfileRecords>> records = userProfileService.findProfileRecordsById(username);
-		if (records.isPresent()) {
-			for (ProfileRecords profileRecord : records.get()) {
+		List<ProfileRecords> records = findProfileRecordsForUser(username);
+		if (null != records) {
+			Map<String, Map<String, Object>> resultMap = new HashMap<String, Map<String,Object>>();
+			for (ProfileRecords profileRecord : records) {
 				innerMap = profileRecord.getData().getMap();
-				String title = (String) innerMap.get(TITLE);
-				innerMap.remove(TITLE);
+				String title = profileRecord.getId().getTitle();
 				resultMap.put(title, innerMap);
 			}
 			return resultMap;
 		}
-		
 		return null;
 	}
 
-	@PostMapping(path = { "/add-profile-records" })
-	public ResponseEntity<Message> addProfileRecords(@RequestBody String jsonData) {
+	@PostMapping(path = { "/add-profile-records/{username}" })
+	public ResponseEntity<Message> addProfileRecords(@RequestBody String jsonData, 
+			@PathVariable("username") String username) {
 		JsonObject jsonObj = null;
-		ProfileRecords profileRecord = null;
+		JsonArray jsonArray = null;
 		try {
-			jsonObj = new JsonObject(jsonData);
-			String username = jsonObj.getString("id", "");
-			String title = jsonObj.getString(TITLE, "");
-			String fieldType = jsonObj.getString("fieldType", "");
-			if (isEmpty(title)) {
-				return ResponseEntity.ok(new Message("", "'Title' field missing in the profile record data", ""));
+			jsonArray = new JsonArray(jsonData);
+			return saveJsonArray(jsonArray, username);
+		} catch (Exception e) {
+			try {
+				jsonObj = new JsonObject(jsonData);
+				return saveJsonObject(jsonObj, username);
+			} 
+			catch (Exception ex) {
+				return ResponseEntity.ok(new Message("", "Invalid JSON Format", ""));
 			}
-			else if (isEmpty(fieldType)) {
-				return ResponseEntity.ok(new Message("", "Field type missing in the profile record data", ""));
-			}
-			else {
-				jsonObj.remove("id");
-				jsonObj.remove(TITLE);
-				jsonObj.remove("fieldType");
-				profileRecord = new ProfileRecords(username, title, fieldType, jsonObj);
-				if (validateWithProfileFields(jsonObj, username, fieldType)) {
-					userProfileService.addProfileRecord(profileRecord);
-					return ResponseEntity.ok(new Message("Profile records added successfully for " + username, "", ""));
-				}
-				else {
-					return ResponseEntity.ok(new Message("", "Mismatched record fields with the defined field set: " 
-							+fieldType, ""));
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			return ResponseEntity.ok(new Message("", "Error occured while saving the data : " + ex.getMessage(), ""));
 		}
 	}
 	
 	@GetMapping("/download-fields-json/{username}/{type}")
-	public ResponseEntity<byte[]> downloadFieldDataAsJson(@PathVariable("username") String username, 
+	public ResponseEntity<Resource> downloadFieldDataAsJson(@PathVariable("username") String username, 
 			@PathVariable("type") String fieldType) throws Exception {
-		Optional<ProfileFields> optional = userProfileService.findProfileFieldsByIdAndType(username, fieldType);
+		Optional<ProfileFields> optional = getOptionalProfileField(username, fieldType);
 		if (optional.isPresent()) {
 			ProfileFields profileFields = optional.get();
-			String jsonStr = new Gson().toJson(profileFields.getNonEmptyFieldsList());
+			String jsonStr = getJsonForProfileFields(profileFields);
 			byte[] byteArr = jsonStr.getBytes();
-			String fileName = fieldType+"_"+username+".json";
 			HttpHeaders respHeaders = new HttpHeaders();
 			respHeaders.setContentLength(byteArr.length);
 			respHeaders.setContentType(MediaType.APPLICATION_JSON);
-			respHeaders.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
-			return new ResponseEntity<byte[]>(byteArr, respHeaders, HttpStatus.OK);
+			respHeaders.set(HttpHeaders.CONTENT_DISPOSITION, "attachment");
+			ByteArrayResource resource = new ByteArrayResource(byteArr);
+			return ResponseEntity.ok().headers(respHeaders).body(resource);
 		}
 		return null;
 	}
+	
+	private ResponseEntity<Message> saveJsonObject(JsonObject jsonObject, String username) {
+		ProfileRecords profileRecord = null;
+		String title = jsonObject.getString(TITLE, "");
+		String fieldType = jsonObject.getString(FIELD_SET, "");
+		if (isEmpty(title)) {
+			return ResponseEntity.ok(new Message("", "Title value missing in the profile record data", ""));
+		}
+		else if (isEmpty(fieldType)) {
+			return ResponseEntity.ok(new Message("", "Field Set value missing in the profile record data", ""));
+		}
+		else {
+			jsonObject.remove(TITLE);
+			jsonObject.remove(FIELD_SET);
+			profileRecord = new ProfileRecords(new ProfileRecordId(username, title), fieldType, jsonObject);
+			if (validateWithProfileFields(jsonObject, username, fieldType)) {
+				userProfileService.addProfileRecord(profileRecord);
+				return ResponseEntity.ok(new Message("Profile records added successfully for " + username, "", ""));
+			}
+			else {
+				return ResponseEntity.ok(new Message("", "Mismatched record fields with the field set: " 
+						+ fieldType + ". Please verify the field set and fields.", ""));
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private ResponseEntity<Message> saveJsonArray(JsonArray jsonArr, String username) {
+		List<ProfileRecords> profileRecords = new ArrayList<ProfileRecords>();
+		List<Map<String, Object>> jsonObjList = jsonArr.getList();
+		ProfileRecords profileRecord = null;
+		if (null != jsonObjList && !jsonObjList.isEmpty()) {
+			for(Map<String, Object> map : jsonObjList) {
+				JsonObject jsonObject = new JsonObject(map);
+				String title = jsonObject.getString(TITLE, "");
+				String fieldType = jsonObject.getString(FIELD_SET, "");
+				if (isEmpty(title)) {
+					return ResponseEntity.ok(new Message("", "Title value missing in the profile record data", ""));
+				}
+				else if (isEmpty(fieldType)) {
+					return ResponseEntity.ok(new Message("", "Field Set value missing in the profile record data", ""));
+				}
+				else {
+					jsonObject.remove(TITLE);
+					jsonObject.remove(FIELD_SET);
+					profileRecord = new ProfileRecords(new ProfileRecordId(username, title), fieldType, jsonObject);
+					if (validateWithProfileFields(jsonObject, username, fieldType)) {
+						profileRecords.add(profileRecord);
+					}
+					else {
+						return ResponseEntity.ok(new Message("", "Mismatched record fields with the field set: " 
+								+ fieldType + ". Please verify the field set and fields.", ""));
+					}
+				}
+			}
+			if (!profileRecords.isEmpty()) {
+				userProfileService.addAllProfileRecord(profileRecords);
+			}
+			return ResponseEntity.ok(new Message("Profile records added successfully for " + username, "", ""));
+		}
+		else {
+			return ResponseEntity.ok(new Message("", "Invalid JSON Format", ""));
+		}
+	}
+	
+	private List<ProfileRecords> findProfileRecordsForUser(String username) {
+		Optional<List<ProfileRecords>> records = userProfileService.findProfileRecordsByUsername(username);
+		if (records.isPresent() && !records.get().isEmpty()) {
+			return records.get();
+		}
+		return null;
+	}
+	
+	private ProfileFields createProfileFields(ProfileFieldsDTO profileFieldsDTO) {
+		ProfileFieldId id = new ProfileFieldId(profileFieldsDTO.getUsername(), profileFieldsDTO.getType());
+		ProfileFields profileFields = new ProfileFields(id, profileFieldsDTO.getField1(), profileFieldsDTO.getField2(),
+				profileFieldsDTO.getField3(), profileFieldsDTO.getField4(), profileFieldsDTO.getField5(), 
+				profileFieldsDTO.getField6(), profileFieldsDTO.getField7(), profileFieldsDTO.getField8(),
+				profileFieldsDTO.getField9(), profileFieldsDTO.getField10());
+		return profileFields;
+	}
+	
+	private String getJsonForProfileFields(ProfileFields profileFields) {
+		JsonObject jsonObject = new JsonObject();
+		jsonObject.put(FIELD_SET, profileFields.getId().getType());
+		jsonObject.put(TITLE, "");
+		for (String field : profileFields.getNonEmptyFieldsList()) {
+			jsonObject.put(field, "");
+		}
+		return jsonObject.encodePrettily();
+	}
 
 	private boolean validateWithProfileFields(JsonObject jsonObj, String username, String fieldType) {
-		Optional<ProfileFields> optional = userProfileService.findProfileFieldsByIdAndType(username, fieldType);
+		Optional<ProfileFields> optional = getOptionalProfileField(username, fieldType);
 		if (optional.isPresent()) {
 			ProfileFields profileFields = optional.get();
 			Set<String> profileFieldSet = profileFields.getNonEmptyFieldsList().stream().collect(Collectors.toSet());
@@ -154,14 +248,18 @@ public class UserProfileController {
 			
 		}
 		return false;
-		
+	}
+	
+	private Optional<ProfileFields> getOptionalProfileField(String username, String fieldType) {
+		return userProfileService.findProfileFieldsById(new ProfileFieldId(username, fieldType));
 	}
 
 	private boolean isProfileFieldsExists(ProfileFields profileFields) {
-		Optional<List<ProfileFields>> optional = userProfileService.findProfileFieldsById(profileFields.getId());
+		Optional<List<ProfileFields>> optional = userProfileService.findProfileFieldsByUsername(
+				profileFields.getId().getUsername());
 		if (optional.isPresent()) {
 			List<ProfileFields> fieldsList = optional.get();
-			if(fieldsList.stream().anyMatch(field -> field.getType().equals(profileFields.getType()))) {
+			if(fieldsList.stream().anyMatch(field -> field.getId().getType().equals(profileFields.getId().getType()))) {
 				return true;
 			}
 		}
@@ -177,106 +275,4 @@ public class UserProfileController {
 		return ResponseEntity.ok("");
 	}
 	
-	
-	// ---- Old Code ----
-	
-	/*	
-	@PostMapping(path = { "/import" })
-	public ResponseEntity<Message> importUserProfile(@RequestBody ProfileDTO userCareerDTO) {
-		JsonObject jsonObj = null;
-		JsonArray jsonArray = null;
-		UserProfile userProfile = null;
-		String jsonStr = userCareerDTO.getJson();
-		String username = userCareerDTO.getUsername();
-		try {
-			jsonArray = new JsonArray(jsonStr);
-			userProfile = new UserProfile(username, null, jsonArray);
-		} catch (Exception e) {
-			try {
-				jsonObj = new JsonObject(jsonStr);
-				userProfile = new UserProfile(username, jsonObj, null);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				return ResponseEntity.ok(new Message("", "Invalid JSON", ""));
-			}
-		}
-
-		userProfile = userProfileService.addUserProfile(userProfile);
-		if (null != userProfile) {
-			return ResponseEntity.ok(new Message("Import Success for User " + username, "", ""));
-		}
-
-		return ResponseEntity.ok(new Message("", "Import Failed for User " + username, ""));
-	}
-
-	@SuppressWarnings("unchecked")
-	@GetMapping(path = { "/get-imported-profile/{username}" })
-	public ResponseEntity<List<Map<String, Object>>> getUserProfile(@PathVariable("username") String username) {
-		Optional<UserProfile> optUserProfile = userProfileService.findUserProfileById(username);
-		UserProfile userProfile = null;
-		List<Map<String, Object>> mapList = new ArrayList<Map<String, Object>>();
-		if (optUserProfile.isPresent()) {
-			userProfile = optUserProfile.get();
-			Object obj = userProfile.getData();
-			if (obj instanceof Map<?, ?>) {
-				mapList.add((Map<String, Object>) obj);
-			} else if (obj instanceof List<?>) {
-				mapList = (List<Map<String, Object>>) obj;
-			}
-			return ResponseEntity.ok(mapList);
-		}
-		
-		return null;
-	}
-	
-	private void populateFieldRecordsMap(Map<String, Object> existingProfileRecordMap, 
-			ProfileFields profileFields, Map<String, Object> profileRecordMap) {
-		for (String field : profileFields.getFieldsList()) {
-			if (!StringUtils.isEmpty(field)) {
-				if (existingProfileRecordMap.containsKey(field)) {
-					profileRecordMap.put(field, existingProfileRecordMap.get(field));
-				}
-				else {
-					profileRecordMap.put(field, "");
-				}
-			}
-		}
-	}
-	
-	private void populateEmptyProfileRecordMap(ProfileFields profileFields,
-			Map<String, Object> profileRecordMap) {
-		if (!isEmpty(profileFields.getField1())) {
-			profileRecordMap.put(profileFields.getField1(), "");
-		}
-		if (!isEmpty(profileFields.getField2())) {
-			profileRecordMap.put(profileFields.getField2(), "");
-		}
-		if (!isEmpty(profileFields.getField3())) {
-			profileRecordMap.put(profileFields.getField3(), "");
-		}
-		if (!isEmpty(profileFields.getField4())) {
-			profileRecordMap.put(profileFields.getField4(), "");
-		}
-		if (!isEmpty(profileFields.getField5())) {
-			profileRecordMap.put(profileFields.getField5(), "");
-		}
-		if (!isEmpty(profileFields.getField6())) {
-			profileRecordMap.put(profileFields.getField6(), "");
-		}
-		if (!isEmpty(profileFields.getField7())) {
-			profileRecordMap.put(profileFields.getField7(), "");
-		}
-		if (!isEmpty(profileFields.getField8())) {
-			profileRecordMap.put(profileFields.getField8(), "");
-		}
-		if (!isEmpty(profileFields.getField9())) {
-			profileRecordMap.put(profileFields.getField9(), "");
-		}
-		if (!isEmpty(profileFields.getField10())) {
-			profileRecordMap.put(profileFields.getField10(), "");
-		}
-	}
-
-*/
-
 }

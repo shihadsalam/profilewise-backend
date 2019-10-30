@@ -3,19 +3,21 @@ package com.boot.angular.service;
 import java.util.List;
 import java.util.Optional;
 
+import com.boot.angular.model.ProfileFieldId;
 import com.boot.angular.model.ProfileFields;
+import com.boot.angular.model.ProfileRecordId;
 import com.boot.angular.model.ProfileRecords;
 
 public interface UserProfileService {
 	
 	
-	public Optional<ProfileFields> findProfileFieldsByIdAndType(String id, String type);
+	public Optional<ProfileFields> findProfileFieldsById(ProfileFieldId id);
 	
-	public Optional<List<ProfileFields>> findProfileFieldsById(String id);
+	public Optional<List<ProfileFields>> findProfileFieldsByUsername(String username);
 	
-	public Optional<List<ProfileRecords>> findProfileRecordsById(String id);
+	public Optional<List<ProfileRecords>> findProfileRecordsByUsername(String username);
 	
-	public Optional<ProfileRecords> findProfileRecordsByIdAndTitle(String id, String title);
+	public Optional<ProfileRecords> findProfileRecordsById(ProfileRecordId id);
 	
 	public void addProfileFields(ProfileFields profileFields);
 	

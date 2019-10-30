@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.persistence.Id;
+import javax.persistence.EmbeddedId;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.util.StringUtils;
@@ -12,9 +12,8 @@ import org.springframework.util.StringUtils;
 @Document(collection = "profile_fields")
 public class ProfileFields {
     
-	@Id
-    private String id;
-	private String type;
+	@EmbeddedId
+    private ProfileFieldId id;
     private String field1;
     private String field2;
     private String field3;
@@ -30,11 +29,10 @@ public class ProfileFields {
     	
     }
 
-	public ProfileFields(String id, String type, String field1, String field2, String field3, String field4, String field5,
+	public ProfileFields(ProfileFieldId id, String field1, String field2, String field3, String field4, String field5,
 			String field6, String field7, String field8, String field9, String field10) {
 		super();
 		this.id = id;
-		this.type = type;
 		this.field1 = field1;
 		this.field2 = field2;
 		this.field3 = field3;
@@ -47,20 +45,12 @@ public class ProfileFields {
 		this.field10 = field10;
 	}
 
-	public String getId() {
+	public ProfileFieldId getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(ProfileFieldId id) {
 		this.id = id;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
 	}
 
 	public String getField1() {

@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.boot.angular.model.ProfileFieldId;
 import com.boot.angular.model.ProfileFields;
+import com.boot.angular.model.ProfileRecordId;
 import com.boot.angular.model.ProfileRecords;
 import com.boot.angular.repository.ProfileFieldsRepository;
 import com.boot.angular.repository.ProfileRecordsRepository;
@@ -25,26 +27,26 @@ public class UserProfileServiceImpl implements UserProfileService {
 	
 	@Override
 	@Transactional
-	public Optional<ProfileFields> findProfileFieldsByIdAndType(String id, String type) {
-		return profileFieldsRepository.findByIdAndType(id, type);
+	public Optional<ProfileFields> findProfileFieldsById(ProfileFieldId id) {
+		return profileFieldsRepository.findById(id);
 	}
 	
 	@Override
 	@Transactional
-	public Optional<List<ProfileFields>> findProfileFieldsById(String id) {
-		return profileFieldsRepository.findAllById(id);
+	public Optional<List<ProfileFields>> findProfileFieldsByUsername(String username) {
+		return profileFieldsRepository.findAllByIdUsername(username);
 	}
 
 	@Override
 	@Transactional
-	public Optional<List<ProfileRecords>> findProfileRecordsById(String id) {
-		return profileRecordsRepository.findAllById(id);
+	public Optional<List<ProfileRecords>> findProfileRecordsByUsername(String username) {
+		return profileRecordsRepository.findAllByIdUsername(username);
 	}
 
 	@Override
 	@Transactional
-	public Optional<ProfileRecords> findProfileRecordsByIdAndTitle(String id, String title) {
-		return profileRecordsRepository.findByIdAndTitle(id, title);
+	public Optional<ProfileRecords> findProfileRecordsById(ProfileRecordId id) {
+		return profileRecordsRepository.findById(id);
 	}
 
 	@Override

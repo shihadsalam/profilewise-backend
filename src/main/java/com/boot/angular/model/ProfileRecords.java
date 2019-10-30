@@ -1,6 +1,6 @@
 package com.boot.angular.model;
 
-import javax.persistence.Id;
+import javax.persistence.EmbeddedId;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -9,9 +9,8 @@ import io.vertx.core.json.JsonObject;
 @Document(collection = "profile_records")
 public class ProfileRecords {
 
-	@Id
-	private String id;
-	private String title;
+	@EmbeddedId
+	private ProfileRecordId id;
 	private String fieldType;
 	private JsonObject data;
 
@@ -19,27 +18,18 @@ public class ProfileRecords {
 
 	}
 
-	public ProfileRecords(String id, String title, String fieldType, JsonObject data) {
+	public ProfileRecords(ProfileRecordId id, String fieldType, JsonObject data) {
 		this.id = id;
-		this.title = title;
 		this.fieldType = fieldType;
 		this.data = data;
 	}
 
-	public String getId() {
+	public ProfileRecordId getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(ProfileRecordId id) {
 		this.id = id;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
 	}
 
 	public String getFieldType() {
