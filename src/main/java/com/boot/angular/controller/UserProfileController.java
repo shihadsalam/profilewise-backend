@@ -29,6 +29,7 @@ import com.boot.angular.model.Message;
 import com.boot.angular.model.ProfileFieldId;
 import com.boot.angular.model.ProfileFields;
 import com.boot.angular.model.ProfileFieldsDTO;
+import com.boot.angular.model.ProfileRecordDTO;
 import com.boot.angular.model.ProfileRecordId;
 import com.boot.angular.model.ProfileRecords;
 import com.boot.angular.service.UserProfileService;
@@ -45,8 +46,6 @@ public class UserProfileController {
 	private UserProfileService userProfileService;
 	
 	private static final String TITLE = "Title";
-	private static final String FIELD_SET = "Field Set";
-
 	
 	@GetMapping(path = { "/get-profile-fields/{username}/{type}" })
 	public ResponseEntity<List<String>> getProfileFields(@PathVariable("username") String username, 
@@ -109,23 +108,34 @@ public class UserProfileController {
 		return null;
 	}
 
-	@PostMapping(path = { "/add-profile-records/{username}" })
-	public ResponseEntity<Message> addProfileRecords(@RequestBody String jsonData, 
-			@PathVariable("username") String username) {
+	@PostMapping(path = { "/add-profile-records" })
+	public ResponseEntity<Message> addProfileRecords(@RequestBody ProfileRecordDTO profileRecordDTO) {
 		JsonObject jsonObj = null;
 		JsonArray jsonArray = null;
+		String jsonData = profileRecordDTO.getJson();
 		try {
 			jsonArray = new JsonArray(jsonData);
-			return saveJsonArray(jsonArray, username);
+			return saveJsonArray(jsonArray, profileRecordDTO);
 		} catch (Exception e) {
 			try {
 				jsonObj = new JsonObject(jsonData);
-				return saveJsonObject(jsonObj, username);
+				return saveJsonObject(jsonObj, profileRecordDTO);
 			} 
 			catch (Exception ex) {
 				return ResponseEntity.ok(new Message("", "Invalid JSON Format", ""));
 			}
 		}
+	}
+	
+	@GetMapping("/get-fields-json/{username}/{type}")
+	public String getFieldDataAsJson(@PathVariable("username") String username, 
+			@PathVariable("type") String fieldType) throws Exception {
+		Optional<ProfileFields> optional = getOptionalProfileField(username, fieldType);
+		if (optional.isPresent()) {
+			ProfileFields profileFields = optional.get();
+			return getJsonForProfileFields(profileFields);
+		}
+		return null;
 	}
 	
 	@GetMapping("/download-fields-json/{username}/{type}")
@@ -146,57 +156,51 @@ public class UserProfileController {
 		return null;
 	}
 	
-	private ResponseEntity<Message> saveJsonObject(JsonObject jsonObject, String username) {
+	private ResponseEntity<Message> saveJsonObject(JsonObject jsonObject, ProfileRecordDTO profileRecordDTO) {
 		ProfileRecords profileRecord = null;
+		String username = profileRecordDTO.getUsername();
+		String fieldType = profileRecordDTO.getFieldType();
 		String title = jsonObject.getString(TITLE, "");
-		String fieldType = jsonObject.getString(FIELD_SET, "");
 		if (isEmpty(title)) {
 			return ResponseEntity.ok(new Message("", "Title value missing in the profile record data", ""));
 		}
-		else if (isEmpty(fieldType)) {
-			return ResponseEntity.ok(new Message("", "Field Set value missing in the profile record data", ""));
-		}
 		else {
 			jsonObject.remove(TITLE);
-			jsonObject.remove(FIELD_SET);
 			profileRecord = new ProfileRecords(new ProfileRecordId(username, title), fieldType, jsonObject);
 			if (validateWithProfileFields(jsonObject, username, fieldType)) {
 				userProfileService.addProfileRecord(profileRecord);
 				return ResponseEntity.ok(new Message("Profile records added successfully for " + username, "", ""));
 			}
 			else {
-				return ResponseEntity.ok(new Message("", "Mismatched record fields with the field set: " 
-						+ fieldType + ". Please verify the field set and fields.", ""));
+				return ResponseEntity.ok(new Message("", "JSON fields not matching with the selected field set: " 
+						+ fieldType, ""));
 			}
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
-	private ResponseEntity<Message> saveJsonArray(JsonArray jsonArr, String username) {
+	private ResponseEntity<Message> saveJsonArray(JsonArray jsonArr, ProfileRecordDTO profileRecordDTO) {
 		List<ProfileRecords> profileRecords = new ArrayList<ProfileRecords>();
 		List<Map<String, Object>> jsonObjList = jsonArr.getList();
+		String username = profileRecordDTO.getUsername();
+		String fieldType = profileRecordDTO.getFieldType();
 		ProfileRecords profileRecord = null;
 		if (null != jsonObjList && !jsonObjList.isEmpty()) {
 			for(Map<String, Object> map : jsonObjList) {
 				JsonObject jsonObject = new JsonObject(map);
 				String title = jsonObject.getString(TITLE, "");
-				String fieldType = jsonObject.getString(FIELD_SET, "");
 				if (isEmpty(title)) {
 					return ResponseEntity.ok(new Message("", "Title value missing in the profile record data", ""));
 				}
-				else if (isEmpty(fieldType)) {
-					return ResponseEntity.ok(new Message("", "Field Set value missing in the profile record data", ""));
-				}
 				else {
 					jsonObject.remove(TITLE);
-					jsonObject.remove(FIELD_SET);
 					profileRecord = new ProfileRecords(new ProfileRecordId(username, title), fieldType, jsonObject);
 					if (validateWithProfileFields(jsonObject, username, fieldType)) {
 						profileRecords.add(profileRecord);
 					}
 					else {
-						return ResponseEntity.ok(new Message("", "Mismatched record fields with the field set: " 
-								+ fieldType + ". Please verify the field set and fields.", ""));
+						return ResponseEntity.ok(new Message("", "JSON fields not matching with the selected field set: " 
+								+ fieldType, ""));
 					}
 				}
 			}
@@ -229,7 +233,6 @@ public class UserProfileController {
 	
 	private String getJsonForProfileFields(ProfileFields profileFields) {
 		JsonObject jsonObject = new JsonObject();
-		jsonObject.put(FIELD_SET, profileFields.getId().getType());
 		jsonObject.put(TITLE, "");
 		for (String field : profileFields.getNonEmptyFieldsList()) {
 			jsonObject.put(field, "");

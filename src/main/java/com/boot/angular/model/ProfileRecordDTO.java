@@ -1,16 +1,18 @@
 package com.boot.angular.model;
 
-public class ProfileDTO {
+public class ProfileRecordDTO {
 
 	private String username;
+	private String fieldType;
 	private String json;
 
-	public ProfileDTO() {
+	public ProfileRecordDTO() {
 
 	}
 
-	public ProfileDTO(String username, String json) {
+	public ProfileRecordDTO(String username, String fieldType, String json) {
 		this.username = username;
+		this.fieldType = fieldType;
 		this.json = json;
 	}
 
@@ -20,6 +22,14 @@ public class ProfileDTO {
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public String getFieldType() {
+		return fieldType;
+	}
+
+	public void setFieldType(String fieldType) {
+		this.fieldType = fieldType;
 	}
 
 	public String getJson() {
