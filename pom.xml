@@ -4,13 +4,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.boot.angular</groupId>
-	<artifactId>SpringBootAngular</artifactId>
+	<groupId>com.profilewise</groupId>
+	<artifactId>ProfileWise</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>SpringBootAngular</name>
-	<description>Demo project for Spring Boot</description>
+	<name>ProfileWise</name>
+	<description>ProfileWise App</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -62,12 +62,19 @@
 			<artifactId>gson</artifactId>
 			<scope>compile</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>be.ceau</groupId>
+			<artifactId>chart</artifactId>
+			<version>2.3.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>
