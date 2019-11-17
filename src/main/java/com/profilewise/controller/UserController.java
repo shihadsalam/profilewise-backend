@@ -53,9 +53,9 @@ public class UserController {
 		return userService.addUser(user);
 	}
 	
-	@GetMapping(path = { "get-reportees/{username}" })
-	public List<User> findReportees(@PathVariable("username") String username) {
-		User user = userService.findUserByUserName(username);
+	@GetMapping(path = { "get-reportees" })
+	public List<User> findReportees() {
+		User user = userService.findUserByUserName(getCurrentUser().getUsername());
 		return user.getReportees();
 	}
 
@@ -117,7 +117,7 @@ public class UserController {
 	public User findUser(@PathVariable("username") String username) {
 		return userService.findUserByUserName(username);
 	}
-
+	
 	@GetMapping(path = { "/get-all-usernames" })
 	public List<String> findUserNames() {
 		return userService.findAllUserNames();

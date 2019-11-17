@@ -3,14 +3,16 @@ package com.profilewise.model;
 public class AuthData {
 
 	private String token;
+	private User currentUser;
 	private String errorMsg;
 
 	public AuthData() {
 
 	}
 
-	public AuthData(String token, String errorMsg) {
+	public AuthData(String token, User currentUser, String errorMsg) {
 		this.token = token;
+		this.currentUser = currentUser;
 		this.errorMsg = errorMsg;
 	}
 
@@ -30,4 +32,12 @@ public class AuthData {
 		this.errorMsg = errorMsg;
 	}
 
+	public User getCurrentUser() {
+		return currentUser;
+	}
+
+	public void setCurrentUser(User currentUser) {
+		this.currentUser = currentUser;
+	}
+	
 }

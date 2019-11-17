@@ -41,10 +41,10 @@ public class AuthenticationController {
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 			final User user = userService.findUserByUserName(loginUser.getUsername());
 			final String token = jwtTokenUtil.generateToken(user);
-			return ResponseEntity.ok(new AuthData(token, null));
+			return ResponseEntity.ok(new AuthData(token, user, null));
 		}
 		catch (Throwable ex) {
-			return ResponseEntity.ok(new AuthData(null, "Invalid Credentials"));
+			return ResponseEntity.ok(new AuthData(null, null, "Invalid Credentials"));
 		}
 	}
 
